@@ -2,11 +2,15 @@ import time
 import display
 import semaphore
 
-clock_display = display.ClockDisplay(1)
+clock_display = display.ClockDisplay()
 clock_display.start()
 
+last_time_semaphore = None
+semaphore_interval_min = 15
+
 last_time_displayed = None
-semaphore_interval_min = 5
+display_interval_min = 1
+
 
 # Create some servo objects
 left_servo = semaphore.Servo(27, 500, 2500)
@@ -25,15 +29,25 @@ while True:
 
     # If first starting up, write the time.  Also write the time if it meets the regular update time.
     # Clear the screen first and then write date and time.
-    if last_time_displayed is None or (
-            current_time.tm_min % semaphore_interval_min == 0 and current_time.tm_min != last_time_displayed):
+    if last_time_semaphore is None or (
+            current_time.tm_min % semaphore_interval_min == 0 and current_time.tm_min != last_time_semaphore):
 
         time_str = time.strftime("%Hh %Mm ", current_time)
         print(time_str)
 
         semaphore_flagger.cmd_queue.put_nowait(time_str)
 
+        last_time_semaphore = current_time.tm_min
+
+    # checking whether display needs to be updated
+    if last_time_displayed is None or (
+            current_time.tm_min % display_interval_min == 0 and current_time.tm_min != last_time_displayed):
+
+        clock_display.time_queue.put_nowait(current_time)
+
         last_time_displayed = current_time.tm_min
+
+
 
     time.sleep(2)
 
