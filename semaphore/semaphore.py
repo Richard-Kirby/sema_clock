@@ -57,15 +57,14 @@ class Servo:
         self.high_duty = high_duty
 
     # Drives the servo to a certain angle, including dealing with negative angles.
-    # The negative angles allows you to flip the motor over to get the required arc you want.
+    # The negative angles lets you deal with a motor that you are using for counterclockwise motion.
     def set_angle(self, angle):
 
         if angle < 0:
-            pass
-            servo_pulse = self.high_duty + (float(angle / 180) * (self.high_duty - self.low_duty))
+            servo_pulse = self.high_duty + (float(angle / 210) * (self.high_duty - self.low_duty))
 
         else:
-            servo_pulse = int((float(angle / 180) * (self.high_duty - self.low_duty)) + self.low_duty)
+            servo_pulse = int((float(angle / 210) * (self.high_duty - self.low_duty)) + self.low_duty)
 
         #print(angle, servo_pulse)
         pi.set_servo_pulsewidth(self.pwm_pin, int(servo_pulse))
@@ -74,11 +73,13 @@ class Servo:
 # The flagger, which translates words into flag movements.  Monitors a queue of what needs to be sent.
 class SemaphoreFlagger(threading.Thread):
 
-    def __init__(self, left_servo, right_servo, pause_time):
+    def __init__(self, left_servo, right_servo, pause_time, left_offset=0, right_offset=0 ):
         threading.Thread.__init__(self)
 
         self.left_servo = left_servo
         self.right_servo = right_servo
+        self.left_offset = left_offset
+        self.right_offset = right_offset
         self.pause_time = pause_time
         self.cmd_queue = queue.Queue()
         self.semaphore_codes = SemaphoreCodes()
@@ -88,10 +89,10 @@ class SemaphoreFlagger(threading.Thread):
     def get_physical_angles(angles):
 
         # Left is made negative as the servo is inverted.  0 doesn't work as -1 *0 = 0, so set to -1
-        if angles[0] is 0:
-            ret_code = (- 1, angles[1])
+        if angles[1] is 0:
+            ret_code = (angles[0], - 1)
         else:
-            ret_code = (- 1* angles[0], angles[1])
+            ret_code = (angles[0], -1 * angles[1])
 
         return ret_code
 
@@ -112,26 +113,28 @@ class SemaphoreFlagger(threading.Thread):
 
                     # Processing each letter.
                     for i in string.upper():
-                        ret_code =self.semaphore_codes.return_flag_angles(i)
+                        ret_code = self.semaphore_codes.return_flag_angles(i)
                         if ret_code is not None:
+                            print(i, "RL", ret_code[1], ret_code[0], )
 
-                            ret_code = self.get_physical_angles(ret_code)
-                            left_angle = ret_code[0]
-                            right_angle = ret_code[1]
-                            print(i, "LR", left_angle, right_angle)
 
-                            self.left_servo.set_angle(left_angle)
-                            self.right_servo.set_angle(right_angle)
+                            left_angle = ret_code[0] + self.left_offset
+                            right_angle = ret_code[1] + self.right_offset
+
+                            (physical_left, physical_right) = self.get_physical_angles((left_angle, right_angle))
+
+                            self.left_servo.set_angle(physical_left)
+                            self.right_servo.set_angle(physical_right)
                             time.sleep(self.pause_time)
 
                     # Need to finish off each string with a rest.  A space is the same as a rest.
-                    ret_code = self.get_physical_angles(self.semaphore_codes.return_flag_angles(' '))
-                    left_angle = ret_code[0]
-                    right_angle = ret_code[1]
-                    print("rest", "LR", left_angle, right_angle)
+                    #ret_code = self.get_physical_angles(self.semaphore_codes.return_flag_angles(' '))
+                    #left_angle = ret_code[0] + self.left_offset
+                    #right_angle = ret_code[1] + self.right_offset
+                    #print("rest", "LR", left_angle, right_angle)
 
-                    self.left_servo.set_angle(left_angle)
-                    self.right_servo.set_angle(right_angle)
+                    #self.left_servo.set_angle(left_angle)
+                    #self.right_servo.set_angle(right_angle)
                     time.sleep(self.pause_time)
 
                 time.sleep(self.pause_time)
@@ -146,11 +149,11 @@ class SemaphoreFlagger(threading.Thread):
 if __name__ == "__main__":
 
     # Create some servo objects
-    left_servo = Servo(27, 500, 2500)
-    right_servo = Servo(9, 500, 2500)
+    right_servo = Servo(27, 500, 2500)
+    left_servo = Servo(9, 500, 2500)
 
     # Set up the Semaphore flagger and start the thread.
-    semaphore_flagger = SemaphoreFlagger(left_servo, right_servo, 0.7)
+    semaphore_flagger = SemaphoreFlagger(left_servo, right_servo, 5, left_offset=30, right_offset=30)
     semaphore_flagger.daemon = True
     semaphore_flagger.start()
 
@@ -158,7 +161,7 @@ if __name__ == "__main__":
         while True:
 
             #semaphore_flagger.cmd_queue.put_nowait("BU")
-            semaphore_flagger.cmd_queue.put_nowait("This is utter bullshit")
+            semaphore_flagger.cmd_queue.put_nowait("0 1 2 3 4 5 6 7 8 9")
             #semaphore_flagger.cmd_queue.put_nowait("abcdefghijklmnopqrstuvxyz0123456789")
 
             time.sleep(1)

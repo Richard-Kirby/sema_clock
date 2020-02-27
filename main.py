@@ -13,19 +13,20 @@ display_interval_min = 1
 
 
 # Create some servo objects
-left_servo = semaphore.Servo(27, 500, 2500)
-right_servo = semaphore.Servo(9, 500, 2500)
+left_servo = semaphore.Servo(9, 500, 2500)
+right_servo = semaphore.Servo(27, 500, 2500)
 
 # Set up the Semaphore flagger and start the thread.
-semaphore_flagger = semaphore.SemaphoreFlagger(left_servo, right_servo, 0.7)
+semaphore_flagger = semaphore.SemaphoreFlagger(left_servo, right_servo, 2, left_offset=30, right_offset=30)
 semaphore_flagger.daemon = True
 semaphore_flagger.start()
 
+# When first starting up, wait a minute to give the Pi time to get synced with NTP.
+time.sleep(60)
 
 while True:
 
     current_time = time.localtime()
-
 
     # If first starting up, write the time.  Also write the time if it meets the regular update time.
     # Clear the screen first and then write date and time.
@@ -46,8 +47,6 @@ while True:
         clock_display.time_queue.put_nowait(current_time)
 
         last_time_displayed = current_time.tm_min
-
-
 
     time.sleep(2)
 
