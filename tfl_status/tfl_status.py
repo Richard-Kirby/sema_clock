@@ -1,12 +1,16 @@
 import requests
 import json
+import threading
+import time
 
 
 # Class that manages the TFL status - sorts out the credentials and makes the queries when asked.
-class TFL_Status:
+class TFL_Status(threading.Thread):
 
     # Get setup, including reading in credentials from the JSON file.  Credentials need to be obtained from TFL.
     def __init__(self):
+        # Init the threading
+        threading.Thread.__init__(self)
 
         # Grab the credentials.  TODO: everyone has to get their own credentials.  Not in the repo.
         with open('tfl_status/tfl_credentials.secret') as json_data_file:
@@ -18,6 +22,8 @@ class TFL_Status:
 
         self.status_request_url = "https://api.tfl.gov.uk/Line/Mode/tube/Status?detail=false&app_key={}&app_id={}"\
             .format(config['credentials']['application_keys'], config['credentials']['application_id'])
+
+        self.status_dictionary = None
 
         #print(self.status_request_url)
 
@@ -32,7 +38,17 @@ class TFL_Status:
         print(status)
         return status
 
+    def run(self):
+
+        # Get the status every once in a while
+        while True:
+            self.status_dictionary = self.get_summary_status()
+            time.sleep(60)
+
+
+
 if __name__ == "__main__":
     tfl_status = TFL_Status()
     tfl_status.get_summary_status()
+    tfl_status.start()
 

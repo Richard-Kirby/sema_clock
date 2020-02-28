@@ -1,1 +1,1 @@
-from .tfl_status import tfl_status
+from .tfl_status import TFL_Status

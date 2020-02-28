@@ -49,6 +49,7 @@ class ClockDisplay(threading.Thread):
         self.date_font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 35)
         self.time_font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 100)
         self.time_queue = queue.Queue()
+        self.tfl_status_queue = queue.Queue()
 
     # Main process of the thread.  Waits for the criteria to be reached for the displaying on the screen.
     def run(self):

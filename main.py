@@ -22,12 +22,21 @@ semaphore_flagger = semaphore.SemaphoreFlagger(left_servo, right_servo, 2, left_
 semaphore_flagger.daemon = True
 semaphore_flagger.start()
 
+# TFL status - gets the data for the Tube Lines.
+tfl_status = tfl_status.TFL_Status()
+tfl_status.daemon = True
+tfl_status.start()
+
+
 # When first starting up, wait a minute to give the Pi time to get synced with NTP.
 time.sleep(60)
 
 while True:
 
     current_time = time.localtime()
+
+    if tfl_status.status_dictionary is not None:
+        clock_display.tfl_status_queue.put_nowait(tfl_status.status_dictionary)
 
     # checking whether display needs to be updated
     if last_time_displayed is None or (
@@ -46,7 +55,6 @@ while True:
         semaphore_flagger.cmd_queue.put_nowait(time_str)
 
         last_time_semaphore = current_time.tm_min
-
 
     time.sleep(2)
 
