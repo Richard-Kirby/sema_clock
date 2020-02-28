@@ -48,11 +48,16 @@ class ClockDisplay(threading.Thread):
         self.draw_black = ImageDraw.Draw(self.image_black)
         self.date_font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 35)
         self.time_font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 100)
+        self.status_font = ImageFont.truetype('./display/LondonTube-MABx.ttf', 22)
+
         self.time_queue = queue.Queue()
         self.tfl_status_queue = queue.Queue()
+        self.tfl_status_str = None
 
     # Main process of the thread.  Waits for the criteria to be reached for the displaying on the screen.
     def run(self):
+
+        tfl_status_dict = None
 
         while True:
 
@@ -64,9 +69,26 @@ class ClockDisplay(threading.Thread):
                 self.image_black = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT), 255)  # 255: clear the frame
                 self.draw_black = ImageDraw.Draw(self.image_black)
 
+                while not self.tfl_status_queue.empty():
+                    tfl_status_dict = self.tfl_status_queue.get_nowait()
+
+                shift = 0 # used to move the text along as move on to next status.
+                if tfl_status_dict is not None:
+                    for key in tfl_status_dict:
+                        if tfl_status_dict[key] == 'Good Service':
+                            image = self.image_black
+                            status = ": good"
+                        else:
+                            image = self.image_red
+                            status = ": " + tfl_status_dict[key]
+                        self.draw_text((270 - shift, 0), self.status_font, key + status, image, rotation=270)
+                        shift += 27
+
                 print (time_to_display)
                 self.display_time(time_to_display)
                 self.write_display()
+
+
             time.sleep(1)
 
     # Displays dte and time on the screen

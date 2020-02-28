@@ -21,7 +21,7 @@ class TFL_Status(threading.Thread):
         self.application_keys = config['credentials']['application_keys']
 
         self.status_request_url = "https://api.tfl.gov.uk/Line/Mode/tube/Status?detail=false&app_key={}&app_id={}"\
-            .format(config['credentials']['application_keys'], config['credentials']['application_id'])
+                .format(config['credentials']['application_keys'], config['credentials']['application_id'])
 
         self.status_dictionary = None
 
@@ -31,11 +31,18 @@ class TFL_Status(threading.Thread):
     def get_summary_status(self):
 
         status ={}
-        result= requests.get(self.status_request_url).json()
-        for line in result:
-            print (line['name'],":", line['lineStatuses'][0]['statusSeverityDescription'])
-            status[line['name']] = line['lineStatuses'][0]['statusSeverityDescription']
-        print(status)
+
+        try:
+            print("trying")
+            result= requests.get(self.status_request_url).json()
+            for line in result:
+                print (line['name'],":", line['lineStatuses'][0]['statusSeverityDescription'])
+                status[line['name']] = line['lineStatuses'][0]['statusSeverityDescription']
+        except:
+            print("tfl status get failed - random number generator or Internet not avail?")
+            #raise
+
+        #print(status)
         return status
 
     def run(self):
