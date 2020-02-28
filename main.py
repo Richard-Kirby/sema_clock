@@ -1,6 +1,7 @@
 import time
 import display
 import semaphore
+import tfl_status
 
 clock_display = display.ClockDisplay()
 clock_display.start()
@@ -28,6 +29,12 @@ while True:
 
     current_time = time.localtime()
 
+    # checking whether display needs to be updated
+    if last_time_displayed is None or (
+            current_time.tm_min % display_interval_min == 0 and current_time.tm_min != last_time_displayed):
+        clock_display.time_queue.put_nowait(current_time)
+        last_time_displayed = current_time.tm_min
+
     # If first starting up, write the time.  Also write the time if it meets the regular update time.
     # Clear the screen first and then write date and time.
     if last_time_semaphore is None or (
@@ -40,13 +47,6 @@ while True:
 
         last_time_semaphore = current_time.tm_min
 
-    # checking whether display needs to be updated
-    if last_time_displayed is None or (
-            current_time.tm_min % display_interval_min == 0 and current_time.tm_min != last_time_displayed):
-
-        clock_display.time_queue.put_nowait(current_time)
-
-        last_time_displayed = current_time.tm_min
 
     time.sleep(2)
 

@@ -2,6 +2,7 @@ import requests
 import json
 
 
+# Class that manages the TFL status - sorts out the credentials and makes the queries when asked.
 class TFL_Status:
 
     # Get setup, including reading in credentials from the JSON file.  Credentials need to be obtained from TFL.
@@ -20,7 +21,8 @@ class TFL_Status:
 
         #print(self.status_request_url)
 
-    def get_status(self):
+    # Get the status from the TFL site and process it to get just the summary status.
+    def get_summary_status(self):
 
         status ={}
         result= requests.get(self.status_request_url).json()
@@ -28,9 +30,9 @@ class TFL_Status:
             print (line['name'],":", line['lineStatuses'][0]['statusSeverityDescription'])
             status[line['name']] = line['lineStatuses'][0]['statusSeverityDescription']
         print(status)
-
+        return status
 
 if __name__ == "__main__":
     tfl_status = TFL_Status()
-    tfl_status.get_status()
+    tfl_status.get_summary_status()
 
