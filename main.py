@@ -17,7 +17,7 @@ left_servo = semaphore.Servo(9, 500, 2500)
 right_servo = semaphore.Servo(27, 500, 2500)
 
 # Set up the Semaphore flagger and start the thread.
-semaphore_flagger = semaphore.SemaphoreFlagger(left_servo, right_servo, 2, left_offset=30, right_offset=30)
+semaphore_flagger = semaphore.SemaphoreFlagger(left_servo, right_servo, 2, left_offset=22, right_offset=22)
 semaphore_flagger.daemon = True
 semaphore_flagger.start()
 
