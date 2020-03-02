@@ -25,6 +25,7 @@ class TFL_Status(threading.Thread):
 
         self.status_dictionary = None
 
+
         #print(self.status_request_url)
 
     # Get the status from the TFL site and process it to get just the summary status.
@@ -40,17 +41,19 @@ class TFL_Status(threading.Thread):
                 status[line['name']] = line['lineStatuses'][0]['statusSeverityDescription']
         except:
             print("tfl status get failed - random number generator or Internet not avail?")
-            #raise
+            raise
 
         #print(status)
         return status
 
     def run(self):
+        # trying to ensure there is enough entropy to get started.  Just wait for 5 min.  Could be more clever.
+        #time.sleep(300)
 
         # Get the status every once in a while
         while True:
             self.status_dictionary = self.get_summary_status()
-            time.sleep(60)
+            time.sleep(120)
 
 
 

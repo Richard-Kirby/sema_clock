@@ -13,6 +13,7 @@ last_time_displayed = None
 display_interval_min = 1
 
 
+
 # Create some servo objects
 left_servo = semaphore.Servo(9, 500, 2500)
 right_servo = semaphore.Servo(27, 500, 2500)
@@ -22,14 +23,14 @@ semaphore_flagger = semaphore.SemaphoreFlagger(left_servo, right_servo, 2, left_
 semaphore_flagger.daemon = True
 semaphore_flagger.start()
 
+# When first starting up, wait a minute to give the Pi time to get synced with NTP.  Also need to build up enough
+# entropy for encryption.
+time.sleep(60)
+
 # TFL status - gets the data for the Tube Lines.
 tfl_status = tfl_status.TFL_Status()
 tfl_status.daemon = True
 tfl_status.start()
-
-
-# When first starting up, wait a minute to give the Pi time to get synced with NTP.
-time.sleep(60)
 
 while True:
 
