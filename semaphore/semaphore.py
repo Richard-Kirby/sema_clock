@@ -32,7 +32,8 @@ class SemaphoreCodes:
             self.codes = json.load(json_semaphore_codes)
 
         for code in self.codes["semaphore_codes"]:
-            print(code["code"], code["left"], code["right"])
+            pass
+            #print(code["code"], code["left"], code["right"])
 
     # Returns the flag angles required for each letter.
     def return_flag_angles(self, code):

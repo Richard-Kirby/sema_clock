@@ -32,6 +32,41 @@ import time
 import threading
 import queue
 
+class LineStatus:
+
+    def __init__(self):
+        self.line_list = [ ["Bakerloo", "BAK", "None"],
+                           ["Central", "CEN", "None"],
+                           ["Circle", "CIR", "None"],
+                           ["District", "DIS", "None"],
+                           ["Hammersmith & City", "H&C", "None"],
+                           ["Jubilee", "JUB", "None"],
+                           ["Metropolitan", "MET", "None"],
+                           ["Northern", "NOR", "None"],
+                           ["Piccadilly", "PIC", "None"],
+                           ["Waterloo & City", "W&C", "None"],
+                           ["Victoria", "VIC", "None"]
+                           ]
+
+        self.abbrev_status = {"Good Service": "OK", "Part Closure": "P.CLS", "Special Service": "SPEC",
+                              "Severe Delay": "SEV.D", "Minor Delays": "MIN.D", "Planned Closure": "CLS",
+                              "Service Closed": "CLS", "Part Suspended": "P.SUS", "Suspended": "SUS"}
+
+    # Fill out the line status, using abbreviations as possible.
+    def fill_line_status(self, tfl_status_dict):
+
+        # Go through all the status in the tfl status dictionary, replace lines and status with abbrev
+        for line in tfl_status_dict:
+
+            for i in range(len(self.line_list)):
+                if line == self.line_list[i][0]:
+                    # Check for Abbrev - use if available, otherwise don't change it.
+                    if tfl_status_dict[line] in self.abbrev_status:
+                        self.line_list[i][2] = self.abbrev_status[tfl_status_dict[line]]
+                    else:
+                        self.line_list[i][2] = tfl_status_dict[line]
+                    break
+
 
 # Clock Display Class - takes care of the display.
 class ClockDisplay(threading.Thread):
@@ -46,9 +81,9 @@ class ClockDisplay(threading.Thread):
         self.draw_red = ImageDraw.Draw(self.image_red)
         self.image_black = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT), 255)    # 255: clear the frame
         self.draw_black = ImageDraw.Draw(self.image_black)
-        self.date_font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 35)
-        self.time_font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 100)
-        self.status_font = ImageFont.truetype('./display/LondonTube-MABx.ttf', 22)
+        self.date_font = ImageFont.truetype('./display/HammersmithOne-Regular.ttf', 35)
+        self.time_font = ImageFont.truetype('./display/HammersmithOne-Regular.ttf', 100)
+        self.status_font = ImageFont.truetype('./display/HammersmithOne-Regular.ttf', 30)
 
         self.time_queue = queue.Queue()
         self.tfl_status_queue = queue.Queue()
@@ -58,6 +93,8 @@ class ClockDisplay(threading.Thread):
     def run(self):
 
         tfl_status_dict = None
+
+        line_status = LineStatus()
 
         while True:
 
@@ -72,19 +109,30 @@ class ClockDisplay(threading.Thread):
                 while not self.tfl_status_queue.empty():
                     tfl_status_dict = self.tfl_status_queue.get_nowait()
 
-                shift = 0 # used to move the text along as move on to next status.
+                shift = 0  # used to move the text along as move on to next status.
+
                 if tfl_status_dict is not None:
-                    for key in tfl_status_dict:
-                        if tfl_status_dict[key] == 'Good Service':
+                    line_status.fill_line_status(tfl_status_dict)
+
+                    x_align =0
+                    status_num =0
+
+                    for item in line_status.line_list:
+                        status_str = '{} {}' .format(item[1],  item[2])
+
+                        if item[2] == "OK":
                             image = self.image_black
-                            status = ": good"
                         else:
                             image = self.image_red
-                            status = ": " + tfl_status_dict[key]
-                        self.draw_text((270 - shift, 0), self.status_font, key + status, image, rotation=270)
-                        shift += 27
 
-                print (time_to_display)
+                        self.draw_text((190 - shift, x_align), self.status_font, status_str, image, rotation=270)
+                        shift += 35
+                        status_num += 1
+                        if status_num == 6:
+                            x_align = 150
+                            shift = 0
+
+                #print (time_to_display)
                 self.display_time(time_to_display)
                 self.write_display()
 
@@ -93,8 +141,17 @@ class ClockDisplay(threading.Thread):
 
     # Displays dte and time on the screen
     def display_time(self, time_to_display):
-        self.draw_text((370, 0), self.date_font, time.strftime("%a %d %m %Y", time_to_display), self.image_black, rotation=270)
-        self.draw_text((300, 0), self.time_font, time.strftime("%H:%M", time_to_display), self.image_red, rotation=270)
+        date_str = time.strftime("%a %d %m %Y", time_to_display)
+        w, h = self.date_font.getsize(date_str)
+        print("date size", w, h)
+        date_offset = int((epd4in2b.EPD_HEIGHT - w)/2)  # Calculate offset to center text.
+        self.draw_text((370, date_offset), self.date_font, date_str, self.image_black, rotation=270)
+
+        time_str = time.strftime("%H:%M", time_to_display)
+        w, h = self.time_font.getsize(time_str)
+        print("time size", w, h)
+        time_offset = int((epd4in2b.EPD_HEIGHT - w)/2)  # Calculate offset to center text
+        self.draw_text((300, time_offset), self.time_font, time_str, self.image_red, rotation=270)
 
     # Writes the display frames to the display.
     def write_display(self):
