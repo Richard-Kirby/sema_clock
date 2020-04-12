@@ -2,6 +2,7 @@ import requests
 import json
 import threading
 import time
+from datetime import date
 
 weather_types =[
     "Clear night",
@@ -36,6 +37,7 @@ weather_types =[
     "Thunder shower (day)",
     "Thunder"]
 
+
 # Class that manages the TFL status - sorts out the credentials and makes the queries when asked.
 class MetWeatherStatus(threading.Thread):
 
@@ -55,43 +57,47 @@ class MetWeatherStatus(threading.Thread):
             .format(self.application_key)
 
         self.status_dictionary = None
-        print(self.status_request_url)
+
+        self.five_day_forecast = []
+
+        #print(self.status_request_url)
 
     # Get the status from the TFL site and process it to get just the summary status.
     def get_summary_status(self):
 
-        status ={}
-
         try:
             print("trying")
             result= requests.get(self.status_request_url).json()
-            #print(result)
-            print(result["SiteRep"]["DV"]["Location"]["name"])
+            #print(result["SiteRep"]["DV"]["Location"]["name"])
 
-            i = 0
-            five_day_forecast = []
+            ret_five_day_forecast = []
 
+            # Process each day in turn.  The Met Office data is nested - this gets us to the forecasts.
             for day in result["SiteRep"]["DV"]["Location"]["Period"]:
+
+                # put into date object - Met Office gives in format of YYYY-MM-DDZ - not sure what the Z is for.
+                forecast_date = date(int(day["value"][:4]), int( day["value"][5:7]), int(day["value"][8:10]))
+
+                # Met Office provides day forecast first, followed by night.  Night is from sundown previous day
+                # to sunrise.  Day from Sunrise to Sunset.
                 day_forecast = day["Rep"].pop(0)
                 night_forecast = day["Rep"].pop(0)
 
-                simple_day_forecast = {"day_weather_type": weather_types[int(day_forecast["W"])],
+                # Create a dictionary for each day.
+                simple_day_forecast = {"date": forecast_date.strftime("%a %d %m %y"),
+                                       "day_weather_type": weather_types[int(day_forecast["W"])],
                                        "night_weather_type": weather_types[int(night_forecast["W"])],
                                        "high_temp": day_forecast["Dm"],
                                        "low_temp": night_forecast["Nm"]}
 
+                ret_five_day_forecast.append(simple_day_forecast)
 
-                five_day_forecast.append(simple_day_forecast)
-
-            for i in range(len(five_day_forecast)):
-                print(i, five_day_forecast[i])
 
         except:
             print("tfl status get failed - random number generator or Internet not avail?")
             raise
 
-        #print(status)
-        return status
+        return ret_five_day_forecast
 
     def run(self):
         # trying to ensure there is enough entropy to get started.  Just wait for 5 min.  Could be more clever.
@@ -99,13 +105,13 @@ class MetWeatherStatus(threading.Thread):
 
         # Get the status every once in a while
         while True:
-            self.status_dictionary = self.get_summary_status()
+            self.five_day_forecast= self.get_summary_status()
+            for i in range(len(self.five_day_forecast)):
+                print(i, self.five_day_forecast[i])
             time.sleep(120)
-
 
 
 if __name__ == "__main__":
     met_weather_status = MetWeatherStatus()
-    met_weather_status.get_summary_status()
     met_weather_status.start()
 
