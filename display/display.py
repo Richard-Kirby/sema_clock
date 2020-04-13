@@ -32,6 +32,7 @@ import time
 import threading
 import queue
 
+
 class LineStatus:
 
     def __init__(self):
@@ -81,13 +82,20 @@ class ClockDisplay(threading.Thread):
         self.draw_red = ImageDraw.Draw(self.image_red)
         self.image_black = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT), 255)    # 255: clear the frame
         self.draw_black = ImageDraw.Draw(self.image_black)
-        self.date_font = ImageFont.truetype('./display/HammersmithOne-Regular.ttf', 35)
-        self.time_font = ImageFont.truetype('./display/HammersmithOne-Regular.ttf', 100)
-        self.status_font = ImageFont.truetype('./display/HammersmithOne-Regular.ttf', 30)
+
+        main_font = './display/HammersmithOne-Regular.ttf'
+
+        self.date_font = ImageFont.truetype(main_font, 35)
+        self.time_font = ImageFont.truetype(main_font, 100)
+        self.status_font = ImageFont.truetype(main_font, 30)
 
         self.time_queue = queue.Queue()
         self.tfl_status_queue = queue.Queue()
         self.tfl_status_str = None
+
+        # Queue and Variable for Met Office 5 day forecast
+        self.met_forecast_queue = queue.Queue()
+        self.five_day_forecast = None
 
     # Main process of the thread.  Waits for the criteria to be reached for the displaying on the screen.
     def run(self):
@@ -96,14 +104,38 @@ class ClockDisplay(threading.Thread):
 
         line_status = LineStatus()
 
+        weather_text = ""
+
         while True:
+
+            if not self.met_forecast_queue.empty():
+                while not self.met_forecast_queue.empty():
+                    self.five_day_forecast = self.met_forecast_queue.get_nowait()
+
+            if self.five_day_forecast is not None and len(self.five_day_forecast) == 5:
+                # print(self.five_day_forecast)
+                # for i in range(len(self.five_day_forecast)):
+                #    print(i, self.five_day_forecast[i]['day_weather_type'])
+                degree_sign = u"\N{DEGREE SIGN}"
+
+                weather_text = [self.five_day_forecast[0]['date'][:3],
+                                "{} {}{}C {}%".format(
+                                self.five_day_forecast[0]['day_weather_type'],
+                                self.five_day_forecast[0]['high_temp'], degree_sign,
+                                self.five_day_forecast[0]['prob_ppt_day']),
+
+                                "{} {}{}C {}%" .format(
+                                self.five_day_forecast[0]['night_weather_type'],
+                                self.five_day_forecast[0]['low_temp'], degree_sign,
+                                self.five_day_forecast[0]['prob_ppt_night'])]
+                #print(weather_text)
 
             if not self.time_queue.empty():
                 time_to_display = self.time_queue.get_nowait()
 
                 self.image_red = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT), 255)  # 255: clear the frame
                 self.draw_red = ImageDraw.Draw(self.image_red)
-                self.image_black = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT), 255)  # 255: clear the frame
+                self.image_black = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT), 255) # 255: clear the frame
                 self.draw_black = ImageDraw.Draw(self.image_black)
 
                 while not self.tfl_status_queue.empty():
@@ -114,8 +146,8 @@ class ClockDisplay(threading.Thread):
                 if tfl_status_dict is not None:
                     line_status.fill_line_status(tfl_status_dict)
 
-                    x_align =0
-                    status_num =0
+                    x_align = 0
+                    status_num = 0
 
                     for item in line_status.line_list:
                         status_str = '{} {}' .format(item[1],  item[2])
@@ -132,10 +164,38 @@ class ClockDisplay(threading.Thread):
                             x_align = 150
                             shift = 0
 
-                #print (time_to_display)
+                # Display time and date
                 self.display_time(time_to_display)
-                self.write_display()
 
+                # Weather Text drawn here.
+                if len(weather_text) > 0:
+
+                    fc_size = []
+
+                    for i in range(3):
+                        fc_size.append(self.status_font.getsize(weather_text[i]))  # width, height size
+                        print(i, weather_text[i], fc_size[i])
+
+                    day_hor = 0
+                    day_vert = 265  # vertical location of day string - adjust forecast by their height
+
+                    vert_loc = [day_vert, day_vert - (fc_size[1][1] - fc_size[0][1]),
+                                day_vert - (fc_size[2][1] - fc_size[0][1]) -35]
+
+                    fore_hor = day_hor + fc_size[0][0]+5
+
+                    self.draw_text((vert_loc[0], day_hor), self.status_font, weather_text[0],
+                                   self.image_black, rotation=270)
+                    self.draw_text((vert_loc[1], fore_hor),
+                                   self.status_font, weather_text[1], self.image_black, rotation=270)
+                    self.draw_text((vert_loc[2], fore_hor),
+                                   self.status_font, weather_text[2], self.image_black, rotation=270)
+
+                    print(weather_text[0],  )
+                    # pop the first forecast and put it on the end to rotate through a new day each display.
+                    self.five_day_forecast.append(self.five_day_forecast.pop(0))
+
+                self.write_display()
 
             time.sleep(1)
 
@@ -143,7 +203,7 @@ class ClockDisplay(threading.Thread):
     def display_time(self, time_to_display):
         date_str = time.strftime("%a %d %m %Y", time_to_display)
         w, h = self.date_font.getsize(date_str)
-        print("date size", w, h)
+        # print("date size", w, h)
         date_offset = int((epd4in2b.EPD_HEIGHT - w)/2)  # Calculate offset to center text.
         self.draw_text((370, date_offset), self.date_font, date_str, self.image_black, rotation=270)
 
@@ -151,7 +211,7 @@ class ClockDisplay(threading.Thread):
         w, h = self.time_font.getsize(time_str)
         print("time size", w, h)
         time_offset = int((epd4in2b.EPD_HEIGHT - w)/2)  # Calculate offset to center text
-        self.draw_text((300, time_offset), self.time_font, time_str, self.image_red, rotation=270)
+        self.draw_text((295, time_offset), self.time_font, time_str, self.image_red, rotation=270)
 
     # Writes the display frames to the display.
     def write_display(self):
@@ -167,14 +227,7 @@ class ClockDisplay(threading.Thread):
         mask = mask.rotate(rotation, expand=True)
         image_red_or_black.paste(mask, position)
 
-    #draw_text((20, 20), "Hello", colour=inkyphat.RED, rotation=45)
-    #draw_text((80, 20), "World", rotation=90)
-
-    #inkyphat.show()
-
 
 if __name__ == '__main__':
     clock_display = ClockDisplay(1)
     clock_display.start()
-    #clock_display.display_time(time.localtime())
-    #clock_display.write_display()

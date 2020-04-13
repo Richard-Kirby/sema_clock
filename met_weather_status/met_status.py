@@ -4,38 +4,38 @@ import threading
 import time
 from datetime import date
 
-weather_types =[
-    "Clear night",
-    "Sunny day",
-    "Partly cloudy (night)",
-    "Partly cloudy (day)",
+weather_types =[ # comments are original Met Office text
+    "Clear",    # Clear Night
+    "Sunny",    # Sunny day
+    "PrtCld",  # "Partly cloudy (night)",
+    "PrtCLd",  # "Partly cloudy (day)",
     "Not used",
     "Mist",
     "Fog",
     "Cloudy",
-    "Overcast",
-    "Light rain shower (night)",
-    "Light rain shower (day)"
-    "Drizzle"
-    "Light rain"
-    "Heavy rain shower (night)",
-    "Heavy rain shower (day)",
-    "Heavy rain",
-    "Sleet shower (night)",
-    "Sleet shower (day)",
+    "Overcs",
+    "L rain",  # "Light rain shower (night)",
+    "L shwr",  # Light rain shower (day)",
+    "Drizzl",
+    "L rain",  # "Light rain",
+    "Hvy sh",  # "Heavy rain shower (night)",
+    "Hvy sh",  # "Heavy rain shower (day)",
+    "H rain",
+    "Slt sh",  # "Sleet shower (night)",
+    "Slt sh",  # "Sleet shower (day)",
     "Sleet",
-    "Hail shower (night)",
-    "Hail shower (day)",
+    "Hail sh",  # Hail shower (night)",
+    "Hail sh",  # "Hail shower (day)",
     "Hail",
-    "Light snow shower (night)",
-    "Light snow shower (day)",
-    "Light snow",
-    "Heavy snow shower (night)",
-    "Heavy snow shower (day)",
-    "Heavy snow",
-    "Thunder shower (night)",
-    "Thunder shower (day)",
-    "Thunder"]
+    "L snw sh",  # "Light snow shower (night)",
+    "L snw sh",  # "Light snow shower (day)",
+    "L snw",
+    "H snw sh",  # "Heavy snow shower (night)",
+    "H snw sh",  # "Heavy snow shower (day)",
+    "H snw",
+    "Thndr sh",  # "Thunder shower (night)",
+    "Thndr sh",  # "Thunder shower (day)",
+    "Thndr"]
 
 
 # Class that manages the TFL status - sorts out the credentials and makes the queries when asked.
@@ -83,12 +83,16 @@ class MetWeatherStatus(threading.Thread):
                 day_forecast = day["Rep"].pop(0)
                 night_forecast = day["Rep"].pop(0)
 
+                #print(int(day_forecast["W"]))
                 # Create a dictionary for each day.
                 simple_day_forecast = {"date": forecast_date.strftime("%a %d %m %y"),
                                        "day_weather_type": weather_types[int(day_forecast["W"])],
                                        "night_weather_type": weather_types[int(night_forecast["W"])],
                                        "high_temp": day_forecast["Dm"],
-                                       "low_temp": night_forecast["Nm"]}
+                                       "low_temp": night_forecast["Nm"],
+                                       "prob_ppt_day":day_forecast["PPd"],
+                                       "prob_ppt_night": night_forecast["PPn"]
+                                       }
 
                 ret_five_day_forecast.append(simple_day_forecast)
 
@@ -105,9 +109,9 @@ class MetWeatherStatus(threading.Thread):
 
         # Get the status every once in a while
         while True:
-            self.five_day_forecast= self.get_summary_status()
-            for i in range(len(self.five_day_forecast)):
-                print(i, self.five_day_forecast[i])
+            self.five_day_forecast = self.get_summary_status()
+            # for i in range(len(self.five_day_forecast)):
+                # print(i, self.five_day_forecast[i])
             time.sleep(120)
 
 
