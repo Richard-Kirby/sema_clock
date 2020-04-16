@@ -1,5 +1,7 @@
 import time
 import threading
+import ntplib
+
 import display
 import semaphore
 import tfl_status
@@ -35,9 +37,24 @@ class SemaphoreClock(threading.Thread):
         self.semaphore_flagger.daemon = True
         self.semaphore_flagger.start()
 
-        # When first starting up, wait a minute to give the Pi time to get synced with NTP.
-        # Also need to build up enough entropy for encryption.
-        time.sleep(60)
+        # check on the time sync.  If not synched yet, then wait and break out of the loop when detected or max loop
+        # reached
+        ntp_client = ntplib.NTPClient()
+
+        # Give some maximum time to sync, otherwise crack on.
+        for i in range (90):
+            try:
+                ntp_response = ntp_client.request('europe.pool.ntp.org', version=4)
+                #print (ntp_response.offset)
+
+                if ntp_response.offset < 2:
+                    print("Synced @ {}" .format(i))
+                    break
+
+            except ntplib.NTPException:
+                print("NTP Exception ")
+
+            time.sleep(1)
 
         # TFL status - gets the data for the Tube Lines.
         self.tfl_status_thread = tfl_status.TFL_Status()
