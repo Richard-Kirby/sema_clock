@@ -37,7 +37,7 @@ class SemaphoreClock(threading.Thread):
 
         # When first starting up, wait a minute to give the Pi time to get synced with NTP.
         # Also need to build up enough entropy for encryption.
-        #time.sleep(60)
+        time.sleep(60)
 
         # TFL status - gets the data for the Tube Lines.
         self.tfl_status_thread = tfl_status.TFL_Status()
@@ -95,7 +95,7 @@ class SemaphoreClock(threading.Thread):
 if __name__ == "__main__":
 
     print("main program")
-    semaphore_clock = SemaphoreClock(15, 1, 9, 500, 2500, 17, 500, 2500, left_offset_angle=22, right_offset_angle=22)
+    semaphore_clock = SemaphoreClock(15, 1, 9, 500, 2500, 27, 500, 2500, left_offset_angle=22, right_offset_angle=22)
     semaphore_clock.daemon = True
     semaphore_clock.start()
 

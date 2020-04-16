@@ -91,8 +91,7 @@ class MetWeatherStatus(threading.Thread):
                                        "high_temp": day_forecast["Dm"],
                                        "low_temp": night_forecast["Nm"],
                                        "prob_ppt_day":day_forecast["PPd"],
-                                       "prob_ppt_night": night_forecast["PPn"]
-                                       }
+                                       "prob_ppt_night": night_forecast["PPn"]}
 
                 ret_five_day_forecast.append(simple_day_forecast)
 
