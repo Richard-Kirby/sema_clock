@@ -60,15 +60,15 @@ class MetWeatherStatus(threading.Thread):
 
         self.five_day_forecast = []
 
-        #print(self.status_request_url)
+        # print(self.status_request_url)
 
     # Get the status from the TFL site and process it to get just the summary status.
     def get_summary_status(self):
 
         try:
-            print("trying")
+            # print("trying")
             result= requests.get(self.status_request_url).json()
-            #print(result["SiteRep"]["DV"]["Location"]["name"])
+            # print(result["SiteRep"]["DV"]["Location"]["name"])
 
             ret_five_day_forecast = []
 
@@ -83,7 +83,7 @@ class MetWeatherStatus(threading.Thread):
                 day_forecast = day["Rep"].pop(0)
                 night_forecast = day["Rep"].pop(0)
 
-                #print(int(day_forecast["W"]))
+                # print(int(day_forecast["W"]))
                 # Create a dictionary for each day.
                 simple_day_forecast = {"date": forecast_date.strftime("%a %d %m %y"),
                                        "day_weather_type": weather_types[int(day_forecast["W"])],
@@ -104,13 +104,10 @@ class MetWeatherStatus(threading.Thread):
 
     def run(self):
         # trying to ensure there is enough entropy to get started.  Just wait for 5 min.  Could be more clever.
-        #time.sleep(300)
 
         # Get the status every once in a while
         while True:
             self.five_day_forecast = self.get_summary_status()
-            # for i in range(len(self.five_day_forecast)):
-                # print(i, self.five_day_forecast[i])
             time.sleep(120)
 
 

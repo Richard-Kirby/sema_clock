@@ -31,20 +31,15 @@ class SemaphoreCodes:
         with open('./semaphore/semaphore_codes.json') as json_semaphore_codes:
             self.codes = json.load(json_semaphore_codes)
 
-        for code in self.codes["semaphore_codes"]:
-            pass
-            #print(code["code"], code["left"], code["right"])
-
     # Returns the flag angles required for each letter.
     def return_flag_angles(self, code):
 
         # TO_DO: can't find the word codes, individual letters works OK.
         ret_code = None
         for array_member in self.codes["semaphore_codes"]:
-            #print(array_member['code'])
             if array_member['code'] is code:
                 ret_code = (array_member["left"], array_member["right"])
-                break # break out of for loop - found it
+                break  # break out of for loop - found it
         return ret_code
 
 
@@ -52,23 +47,22 @@ class SemaphoreCodes:
 class Servo:
 
     # Details of how to drive the servo.
-    def __init__(self, pwm_pin, low_duty, high_duty):
-        self.pwm_pin = pwm_pin
-        self.low_duty = low_duty
-        self.high_duty = high_duty
+    def __init__(self, servo_dict):
+        self.servo_dict = servo_dict        
 
     # Drives the servo to a certain angle, including dealing with negative angles.
     # The negative angles lets you deal with a motor that you are using for counterclockwise motion.
     def set_angle(self, angle):
 
         if angle < 0:
-            servo_pulse = self.high_duty + (float(angle / 210) * (self.high_duty - self.low_duty))
+            servo_pulse = self.servo_dict['high_duty'] + (float(angle / 210) * (self.servo_dict['high_duty'] 
+                                                                                - self.servo_dict['low_duty']))
 
         else:
-            servo_pulse = int((float(angle / 210) * (self.high_duty - self.low_duty)) + self.low_duty)
+            servo_pulse = int((float(angle / 210) * (self.servo_dict['high_duty'] - self.servo_dict['low_duty'])) 
+                              + self.servo_dict['low_duty'])
 
-        #print(angle, servo_pulse)
-        pi.set_servo_pulsewidth(self.pwm_pin, int(servo_pulse))
+        pi.set_servo_pulsewidth(self.servo_dict['pwm_pin'], int(servo_pulse))
 
 
 # The flagger, which translates words into flag movements.  Monitors a queue of what needs to be sent.
@@ -110,15 +104,11 @@ class SemaphoreFlagger(threading.Thread):
 
                     # Get the string
                     string = self.cmd_queue.get_nowait()
-                    print(string)
 
                     # Processing each letter.
                     for i in string.upper():
                         ret_code = self.semaphore_codes.return_flag_angles(i)
                         if ret_code is not None:
-                            print(i, "RL", ret_code[1], ret_code[0], )
-
-
                             left_angle = ret_code[0] + self.left_offset
                             right_angle = ret_code[1] + self.right_offset
 
@@ -128,14 +118,6 @@ class SemaphoreFlagger(threading.Thread):
                             self.right_servo.set_angle(physical_right)
                             time.sleep(self.pause_time)
 
-                    # Need to finish off each string with a rest.  A space is the same as a rest.
-                    #ret_code = self.get_physical_angles(self.semaphore_codes.return_flag_angles(' '))
-                    #left_angle = ret_code[0] + self.left_offset
-                    #right_angle = ret_code[1] + self.right_offset
-                    #print("rest", "LR", left_angle, right_angle)
-
-                    #self.left_servo.set_angle(left_angle)
-                    #self.right_servo.set_angle(right_angle)
                     time.sleep(self.pause_time)
 
                 time.sleep(self.pause_time)
@@ -150,11 +132,15 @@ class SemaphoreFlagger(threading.Thread):
 if __name__ == "__main__":
 
     # Create some servo objects
-    right_servo = Servo(27, 500, 2500)
-    left_servo = Servo(9, 500, 2500)
+    
+    right_servo_def = {'pwm_pin': 27, 'low_duty': 500, 'high_duty': 2500}
+    left_servo_def = {'pwm_pin': 9, 'low_duty': 500, 'high_duty': 2500}
+
+    right_sema_servo = Servo(right_servo_def)
+    left_sema_servo = Servo(left_servo_def)
 
     # Set up the Semaphore flagger and start the thread.
-    semaphore_flagger = SemaphoreFlagger(left_servo, right_servo, 5, left_offset=30, right_offset=30)
+    semaphore_flagger = SemaphoreFlagger(left_sema_servo, right_sema_servo, 5, left_offset=30, right_offset=30)
     semaphore_flagger.daemon = True
     semaphore_flagger.start()
 

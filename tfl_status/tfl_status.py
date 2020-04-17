@@ -5,7 +5,7 @@ import time
 
 
 # Class that manages the TFL status - sorts out the credentials and makes the queries when asked.
-class TFL_Status(threading.Thread):
+class Tfl_Status(threading.Thread):
 
     # Get setup, including reading in credentials from the JSON file.  Credentials need to be obtained from TFL.
     def __init__(self):
@@ -25,40 +25,31 @@ class TFL_Status(threading.Thread):
 
         self.status_dictionary = None
 
-
-        #print(self.status_request_url)
-
     # Get the status from the TFL site and process it to get just the summary status.
     def get_summary_status(self):
 
         status ={}
 
         try:
-            print("trying")
             result= requests.get(self.status_request_url).json()
             for line in result:
-                print (line['name'],":", line['lineStatuses'][0]['statusSeverityDescription'])
+                # print (line['name'],":", line['lineStatuses'][0]['statusSeverityDescription'])
                 status[line['name']] = line['lineStatuses'][0]['statusSeverityDescription']
         except:
             print("tfl status get failed - random number generator or Internet not avail?")
             raise
 
-        #print(status)
         return status
 
     def run(self):
-        # trying to ensure there is enough entropy to get started.  Just wait for 5 min.  Could be more clever.
-        #time.sleep(300)
-
         # Get the status every once in a while
         while True:
             self.status_dictionary = self.get_summary_status()
             time.sleep(120)
 
 
-
 if __name__ == "__main__":
-    tfl_status = TFL_Status()
+    tfl_status = Tfl_Status()
     tfl_status.get_summary_status()
     tfl_status.start()
 
