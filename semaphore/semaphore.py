@@ -80,16 +80,25 @@ class SemaphoreFlagger(threading.Thread):
         self.semaphore_codes = SemaphoreCodes()
 
     # calculates the physical angles to use - Left is negative as the servo is inverted
-    @staticmethod
-    def get_physical_angles(angles):
+    def set_physical_angles(self, letter, angles):
 
         # Left is made negative as the servo is inverted.  0 doesn't work as -1 *0 = 0, so set to -1
         if angles[1] is 0:
-            ret_code = (angles[0], - 1)
+            physical_left, physical_right = (angles[0], - 1)
         else:
-            ret_code = (angles[0], -1 * angles[1])
+            physical_left, physical_right= (angles[0], -1 * angles[1])
 
-        return ret_code
+        print("letter {} L= {} R= {}".format(letter, physical_left, physical_right))
+
+        self.left_servo.set_angle(physical_left)
+        self.right_servo.set_angle(physical_right)
+
+    def signal_error(self, char):
+        for i in range(5):
+            self.set_physical_angles(char, (135 + self.left_offset, 135 + self.right_offset))
+            time.sleep(0.5)
+            self.set_physical_angles(char, (45 + self.left_offset, 45 + self.right_offset))
+            time.sleep(0.5)
 
     # This is the over-ridden function for the running of the thread.  It just looks for things to pop up
     # in its queue and gets the angles set accordingly.
@@ -108,15 +117,14 @@ class SemaphoreFlagger(threading.Thread):
                     # Processing each letter.
                     for i in string.upper():
                         ret_code = self.semaphore_codes.return_flag_angles(i)
+
                         if ret_code is not None:
-                            left_angle = ret_code[0] + self.left_offset
-                            right_angle = ret_code[1] + self.right_offset
-
-                            (physical_left, physical_right) = self.get_physical_angles((left_angle, right_angle))
-
-                            self.left_servo.set_angle(physical_left)
-                            self.right_servo.set_angle(physical_right)
+                            self.set_physical_angles(i, (ret_code[0] + self.left_offset,
+                                                         ret_code[1] + self.right_offset))
                             time.sleep(self.pause_time)
+                        else:
+                            print("Error - couldn't find {}".format(i))
+                            self.signal_error(i)
 
                     time.sleep(self.pause_time)
 
@@ -140,18 +148,25 @@ if __name__ == "__main__":
     left_sema_servo = Servo(left_servo_def)
 
     # Set up the Semaphore flagger and start the thread.
-    semaphore_flagger = SemaphoreFlagger(left_sema_servo, right_sema_servo, 5, left_offset=30, right_offset=30)
+    semaphore_flagger = SemaphoreFlagger(left_sema_servo, right_sema_servo, 2, left_offset=22, right_offset=22)
     semaphore_flagger.daemon = True
     semaphore_flagger.start()
 
     try:
         while True:
 
+            #test_suite = "01234567890Abcdefghijklmnopqrstuvwxyz "
             #semaphore_flagger.cmd_queue.put_nowait("BU")
-            semaphore_flagger.cmd_queue.put_nowait("0 1 2 3 4 5 6 7 8 9")
+            #test_suite = "Abcdefghijklmnopqrstuvwxyz 1234567890"
+            test_suite = "owxyz"
+
+            for char in test_suite:
+                print(char)
+                semaphore_flagger.cmd_queue.put_nowait(char)
+
             #semaphore_flagger.cmd_queue.put_nowait("abcdefghijklmnopqrstuvxyz0123456789")
 
-            time.sleep(1)
+                time.sleep(1)
 
 
     except KeyboardInterrupt:

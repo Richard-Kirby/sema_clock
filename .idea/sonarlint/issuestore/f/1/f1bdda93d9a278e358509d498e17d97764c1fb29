@@ -1,4 +1,2 @@
 
-cpython:S107"LMethod "__init__" has 11 parameters, which is greater than the 7 authorized.(ÔË±ô
-Fpython:S1066K"/Merge this if statement with the enclosing one.(¼‡äq
-lpython:S37767"TRefactor this function to reduce its Cognitive Complexity from 18 to the 15 allowed.(¯Œåò
+lpython:S3776H"TRefactor this function to reduce its Cognitive Complexity from 16 to the 15 allowed.(¯Œåò
