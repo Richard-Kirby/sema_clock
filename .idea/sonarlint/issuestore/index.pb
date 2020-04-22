@@ -13,3 +13,5 @@ P
  met_weather_status/met_status.py,f\d\fd512c9258aff76e526247b235b6f7c25184d99f
 F
 tfl_status/__init__.py,d\9\d972875bb0511b24330e1b46d11692d9e23c2a8f
+N
+semaphore/semaphore_codes.json,4\7\4755e2b2195e38697e90ad4b22c824e5aaac9639

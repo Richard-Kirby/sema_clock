@@ -3,6 +3,7 @@ import json
 import threading
 import time
 from datetime import date
+import sys
 
 weather_types =[ # comments are original Met Office text
     "Clear",    # Clear Night
@@ -65,40 +66,46 @@ class MetWeatherStatus(threading.Thread):
     # Get the status from the TFL site and process it to get just the summary status.
     def get_summary_status(self):
 
+        ret_five_day_forecast = []
+
         try:
             # print("trying")
-            result= requests.get(self.status_request_url).json()
-            # print(result["SiteRep"]["DV"]["Location"]["name"])
 
-            ret_five_day_forecast = []
+            raw_data = requests.get(self.status_request_url)
+            print(raw_data)
 
-            # Process each day in turn.  The Met Office data is nested - this gets us to the forecasts.
-            for day in result["SiteRep"]["DV"]["Location"]["Period"]:
+            try:
+                result = raw_data.json()
+                # Process each day in turn.  The Met Office data is nested - this gets us to the forecasts.
+                for day in result["SiteRep"]["DV"]["Location"]["Period"]:
+                    # put into date object - Met Office gives in format of YYYY-MM-DDZ - not sure what the Z is for.
+                    forecast_date = date(int(day["value"][:4]), int(day["value"][5:7]), int(day["value"][8:10]))
 
-                # put into date object - Met Office gives in format of YYYY-MM-DDZ - not sure what the Z is for.
-                forecast_date = date(int(day["value"][:4]), int( day["value"][5:7]), int(day["value"][8:10]))
+                    # Met Office provides day forecast first, followed by night.  Night is from sundown previous day
+                    # to sunrise.  Day from Sunrise to Sunset.
+                    day_forecast = day["Rep"].pop(0)
+                    night_forecast = day["Rep"].pop(0)
 
-                # Met Office provides day forecast first, followed by night.  Night is from sundown previous day
-                # to sunrise.  Day from Sunrise to Sunset.
-                day_forecast = day["Rep"].pop(0)
-                night_forecast = day["Rep"].pop(0)
+                    # print(int(day_forecast["W"]))
+                    # Create a dictionary for each day.
+                    simple_day_forecast = {"date": forecast_date.strftime("%a %d %m %y"),
+                                           "day_weather_type": weather_types[int(day_forecast["W"])],
+                                           "night_weather_type": weather_types[int(night_forecast["W"])],
+                                           "high_temp": day_forecast["Dm"],
+                                           "low_temp": night_forecast["Nm"],
+                                           "prob_ppt_day": day_forecast["PPd"],
+                                           "prob_ppt_night": night_forecast["PPn"]}
 
-                # print(int(day_forecast["W"]))
-                # Create a dictionary for each day.
-                simple_day_forecast = {"date": forecast_date.strftime("%a %d %m %y"),
-                                       "day_weather_type": weather_types[int(day_forecast["W"])],
-                                       "night_weather_type": weather_types[int(night_forecast["W"])],
-                                       "high_temp": day_forecast["Dm"],
-                                       "low_temp": night_forecast["Nm"],
-                                       "prob_ppt_day":day_forecast["PPd"],
-                                       "prob_ppt_night": night_forecast["PPn"]}
+                    ret_five_day_forecast.append(simple_day_forecast)
 
-                ret_five_day_forecast.append(simple_day_forecast)
-
+            except:
+                print("Problem with dealing with {} from Met Office".format(raw_data))
+                raise
 
         except:
-            print("tfl status get failed - random number generator or Internet not avail?")
-            raise
+            print("Met Get status get failed - random number generator or Internet not avail?")
+            error = sys.exc_info()
+            print("*** Error in Met Status: {}".format(error))
 
         return ret_five_day_forecast
 

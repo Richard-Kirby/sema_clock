@@ -115,7 +115,7 @@ if __name__ == "__main__":
     right_servo_def = {'pwm_pin': 27, 'low_duty': 500, 'high_duty': 2500}
     left_servo_def = {'pwm_pin': 9, 'low_duty': 500, 'high_duty': 2500}
 
-    semaphore_clock = SemaphoreClock(2, 1, left_servo_def, right_servo_def, left_offset_angle=22,
+    semaphore_clock = SemaphoreClock(15, 1, left_servo_def, right_servo_def, left_offset_angle=22,
                                      right_offset_angle=22)
     semaphore_clock.daemon = True
     semaphore_clock.start()
