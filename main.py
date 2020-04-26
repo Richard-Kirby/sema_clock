@@ -1,6 +1,8 @@
 import time
 import threading
 import ntplib
+import sys
+import socket
 
 import display
 import semaphore
@@ -52,7 +54,10 @@ class SemaphoreClock(threading.Thread):
                     break
 
             except ntplib.NTPException:
-                print("NTP Exception ")
+                print("NTP Exception ", sys.exc_info())
+
+            except socket.gaierror:
+                print("socket.gaierror exception - can be a problem on first boot:", sys.exc_info())
 
             time.sleep(1)
 
