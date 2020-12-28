@@ -24,7 +24,7 @@
  # THE SOFTWARE.
  ##
 
-from . import epd4in2b
+# from . import epd4in2b
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
@@ -76,12 +76,17 @@ class ClockDisplay(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
+
+        ''' 
         self.epd = epd4in2b.EPD()
         self.epd.init()
+        
+
         self.image_red = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT), 255)    # 255: clear the frame
         self.draw_red = ImageDraw.Draw(self.image_red)
         self.image_black = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT), 255)    # 255: clear the frame
         self.draw_black = ImageDraw.Draw(self.image_black)
+        '''
 
         main_font = './display/HammersmithOne-Regular.ttf'
 
@@ -182,7 +187,8 @@ class ClockDisplay(threading.Thread):
     def display_time(self, time_to_display):
         date_str = time.strftime("%a %d %m %Y", time_to_display)
         w, h = self.date_font.getsize(date_str)
-        # print("date size", w, h)
+        print("date size", w, h)
+        ''' 
         date_offset = int((epd4in2b.EPD_HEIGHT - w)/2)  # Calculate offset to center text.
         self.draw_text((370, date_offset), self.date_font, date_str, self.image_black, rotation=270)
 
@@ -191,11 +197,13 @@ class ClockDisplay(threading.Thread):
         # print("time size", w, h)
         time_offset = int((epd4in2b.EPD_HEIGHT - w)/2)  # Calculate offset to center text
         self.draw_text((295, time_offset), self.time_font, time_str, self.image_red, rotation=270)
+        '''
 
     # Writes the display frames to the display.
     def write_display(self):
         # display the frames
-        self.epd.display_frame(self.epd.get_frame_buffer(self.image_black), self.epd.get_frame_buffer(self.image_red))
+        # self.epd.display_frame(self.epd.get_frame_buffer(self.image_black), self.epd.get_frame_buffer(self.image_red))
+        print("Write Display")
 
     # Rotates the text - allows to write text portrait or whatever.
     def draw_text(self, position, font, text, image_red_or_black, rotation=0):
@@ -213,11 +221,13 @@ class ClockDisplay(threading.Thread):
             if not self.time_queue.empty():
                 time_to_display = self.time_queue.get_nowait()
 
+                ''' 
                 self.image_red = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT), 255)  # 255: clear the frame
                 self.draw_red = ImageDraw.Draw(self.image_red)
                 self.image_black = Image.new('1', (epd4in2b.EPD_WIDTH, epd4in2b.EPD_HEIGHT),
                                              255)  # 255: clear the frame
                 self.draw_black = ImageDraw.Draw(self.image_black)
+                '''
 
                 # Display time and date
                 self.display_time(time_to_display)

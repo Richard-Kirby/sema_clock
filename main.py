@@ -5,15 +5,13 @@ import sys
 import socket
 
 import display
-import semaphore
 import tfl_status
 import met_weather_status
 
 
-class SemaphoreClock(threading.Thread):
+class WeatherClock(threading.Thread):
 
-    def __init__(self, semaphore_interval_min, display_interval_min, left_servo_dict, right_servo_dict,
-                 left_offset_angle=22, right_offset_angle=22):
+    def __init__(self):
 
         # Init the threading
         threading.Thread.__init__(self)
@@ -21,23 +19,8 @@ class SemaphoreClock(threading.Thread):
         # Start the display
         self.clock_display = display.ClockDisplay()
         self.clock_display.start()
-
-        # Some configuration that could go into a Config File.
-        self.last_time_semaphore = None
-        self.semaphore_interval_min = semaphore_interval_min
-
         self.last_time_displayed = None
-        self.display_interval_min = display_interval_min
-
-        # Create the servo objects
-        left_servo = semaphore.Servo(left_servo_dict)
-        right_servo = semaphore.Servo(right_servo_dict)
-
-        # Set up the Semaphore flagger and start the thread.
-        self.semaphore_flagger = semaphore.SemaphoreFlagger(left_servo, right_servo, 2, left_offset=left_offset_angle,
-                                                            right_offset=right_offset_angle)
-        self.semaphore_flagger.daemon = True
-        self.semaphore_flagger.start()
+        self.display_interval_min = 1
 
         # check on the time sync.  If not synched yet, then wait and break out of the loop when detected or max loop
         # reached
@@ -97,18 +80,9 @@ class SemaphoreClock(threading.Thread):
                 self.clock_display.met_forecast_queue.put_nowait(self.met_status_thread.five_day_forecast)
                 self.last_forecast = current_time.tm_min # stays at None until a valid forecast sent
 
-            # If first starting up, signal via the semaphores.  Also write the time if it meets the regular update time.
-            # Clear the screen first and then write date and time.
-            if self.last_time_semaphore is None or (
-                    current_time.tm_min % self.semaphore_interval_min == 0
-                    and current_time.tm_min != self.last_time_semaphore):
 
                 time_str = time.strftime("%Hh %Mm ", current_time)
                 #print(time_str)
-
-                self.semaphore_flagger.cmd_queue.put_nowait(time_str)
-
-                self.last_time_semaphore = current_time.tm_min
 
             time.sleep(2)
 
@@ -120,8 +94,7 @@ if __name__ == "__main__":
     right_servo_def = {'pwm_pin': 27, 'low_duty': 500, 'high_duty': 2500}
     left_servo_def = {'pwm_pin': 9, 'low_duty': 500, 'high_duty': 2500}
 
-    semaphore_clock = SemaphoreClock(15, 1, left_servo_def, right_servo_def, left_offset_angle=22,
-                                     right_offset_angle=22)
+    semaphore_clock = WeatherClock()
     semaphore_clock.daemon = True
     semaphore_clock.start()
 

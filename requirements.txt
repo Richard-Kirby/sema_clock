@@ -1,4 +1,3 @@
-epd-library
 pigpio
 Pillow
 requests
