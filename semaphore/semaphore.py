@@ -88,7 +88,7 @@ class SemaphoreFlagger(threading.Thread):
         else:
             physical_left, physical_right= (angles[0], -1 * angles[1])
 
-        print("letter {} L= {} R= {}".format(letter, physical_left, physical_right))
+        #print("letter {} L= {} R= {}".format(letter, physical_left, physical_right))
 
         self.left_servo.set_angle(physical_left)
         self.right_servo.set_angle(physical_right)
@@ -161,7 +161,7 @@ if __name__ == "__main__":
             test_suite = "owxyz"
 
             for char in test_suite:
-                print(char)
+                #print(char)
                 semaphore_flagger.cmd_queue.put_nowait(char)
 
             #semaphore_flagger.cmd_queue.put_nowait("abcdefghijklmnopqrstuvxyz0123456789")

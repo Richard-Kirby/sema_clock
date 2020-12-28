@@ -50,7 +50,7 @@ class LineStatus:
                            ]
 
         self.abbrev_status = {"Good Service": "OK", "Part Closure": "P.CLS", "Special Service": "SPEC",
-                              "Severe Delay": "SEV.D", "Minor Delays": "MIN.D", "Planned Closure": "CLS",
+                              "Severe Delays": "SEV.D", "Minor Delays": "MIN.D", "Planned Closure": "CLS",
                               "Service Closed": "CLS", "Part Suspended": "P.SUS", "Suspended": "SUS"}
 
     # Fill out the line status, using abbreviations as possible.

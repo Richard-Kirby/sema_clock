@@ -72,7 +72,7 @@ class MetWeatherStatus(threading.Thread):
             # print("trying")
 
             raw_data = requests.get(self.status_request_url)
-            print(raw_data)
+            #print(raw_data)
 
             try:
                 result = raw_data.json()

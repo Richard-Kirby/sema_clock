@@ -104,7 +104,7 @@ class SemaphoreClock(threading.Thread):
                     and current_time.tm_min != self.last_time_semaphore):
 
                 time_str = time.strftime("%Hh %Mm ", current_time)
-                print(time_str)
+                #print(time_str)
 
                 self.semaphore_flagger.cmd_queue.put_nowait(time_str)
 
