@@ -129,6 +129,7 @@ class ClockDisplay(threading.Thread):
 
             fc_size = []
 
+            '''
             for i in range(3):
                 fc_size.append(self.status_font.getsize(self.weather_text[i]))  # width, height size
 
@@ -140,12 +141,15 @@ class ClockDisplay(threading.Thread):
 
             fore_hor = day_hor + fc_size[0][0] + 5
 
+            
             self.draw_text((vert_loc[0], day_hor), self.status_font, self.weather_text[0],
                            self.image_black, rotation=270)
             self.draw_text((vert_loc[1], fore_hor),
                            self.status_font, self.weather_text[1], self.image_black, rotation=270)
             self.draw_text((vert_loc[2], fore_hor),
                            self.status_font, self.weather_text[2], self.image_black, rotation=270)
+            '''
+            print(self.weather_text)
 
             # print(weather_text[0],  )
             # pop the first forecast and put it on the end to rotate through a new day each display.
@@ -169,19 +173,22 @@ class ClockDisplay(threading.Thread):
 
                 # If a line is OK, then display in black, otherwise red.
                 if item[2] == "OK":
-                    image = self.image_black
+                    pass
+                    # image = self.image_black
                 else:
-                    image = self.image_red
+                    pass
+                    # image = self.image_red
 
                 # This draws ths status in the right colour.
-                self.draw_text((190 - shift, x_align), self.status_font, status_str, image, rotation=270)
-                shift += 35  # Spacing text
-                status_num += 1
+                #self.draw_text((190 - shift, x_align), self.status_font, status_str, image, rotation=270)
+                #shift += 35  # Spacing text
+                #status_num += 1
 
                 # Perform a wrap after 6 lines.
-                if status_num == 6:
-                    x_align = 150
-                    shift = 0
+                #if status_num == 6:
+                #    x_align = 150
+                #    shift = 0
+                print(status_str)
 
     # Displays dte and time on the screen
     def display_time(self, time_to_display):
@@ -208,11 +215,13 @@ class ClockDisplay(threading.Thread):
     # Rotates the text - allows to write text portrait or whatever.
     def draw_text(self, position, font, text, image_red_or_black, rotation=0):
         w, h = font.getsize(text)
-        mask = Image.new('1', (w, h), color=1)
-        draw = ImageDraw.Draw(mask)
-        draw.text((0, 0), text, 0, font)
-        mask = mask.rotate(rotation, expand=True)
-        image_red_or_black.paste(mask, position)
+
+        print(text)
+        #mask = Image.new('1', (w, h), color=1)
+        #draw = ImageDraw.Draw(mask)
+        #draw.text((0, 0), text, 0, font)
+        #mask = mask.rotate(rotation, expand=True)
+        #image_red_or_black.paste(mask, position)
 
     # Main process of the thread.  Waits for the criteria to be reached for the displaying on the screen.
     def run(self):
