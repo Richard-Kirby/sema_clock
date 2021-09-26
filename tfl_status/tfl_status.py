@@ -37,7 +37,7 @@ class Tfl_Status(threading.Thread):
                 status[line['name']] = line['lineStatuses'][0]['statusSeverityDescription']
         except:
             print("tfl status get failed - random number generator or Internet not avail?")
-            raise
+            #raise - removed on 07/02/21 - keep retrying. 
 
         return status
 
